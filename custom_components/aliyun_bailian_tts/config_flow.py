@@ -26,7 +26,7 @@ class AliyunBaiLianTTSOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize options flow."""
-        self.config_entry = config_entry
+        self._config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
@@ -36,9 +36,9 @@ class AliyunBaiLianTTSOptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_create_entry(title="Aliyun BaiLian TTS Options", data=user_input)
 
         # 默认值从现有配置中读取，如果不存在则使用默认值
-        default_token = self.config_entry.options.get(CONF_TOKEN, "")
-        default_model = self.config_entry.options.get(CONF_MODEL, "cosyvoice-v1")
-        default_voice = self.config_entry.options.get(CONF_VOICE, "longxiaochun")
+        default_token = self._config_entry.options.get(CONF_TOKEN, "")
+        default_model = self._config_entry.options.get(CONF_MODEL, "cosyvoice-v1")
+        default_voice = self._config_entry.options.get(CONF_VOICE, "longxiaochun")
 
         return self.async_show_form(
             step_id="init",
