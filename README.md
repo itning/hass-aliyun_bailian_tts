@@ -1,4 +1,25 @@
-# 阿里云百炼平台TTS与Home Assistant集成
+<h3 align="center">阿里云百炼平台TTS与Home Assistant集成</h3>
+<div align="center">
+
+[![GitHub stars](https://img.shields.io/github/stars/itning/hass-aliyun_bailian_tts.svg?style=social&label=Stars)](https://github.com/itning/hass-aliyun_bailian_tts/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/itning/hass-aliyun_bailian_tts.svg?style=social&label=Fork)](https://github.com/itning/hass-aliyun_bailian_tts/network/members)
+[![GitHub watchers](https://img.shields.io/github/watchers/itning/hass-aliyun_bailian_tts.svg?style=social&label=Watch)](https://github.com/itning/hass-aliyun_bailian_tts/watchers)
+[![GitHub followers](https://img.shields.io/github/followers/itning.svg?style=social&label=Follow)](https://github.com/itning?tab=followers)
+
+
+</div>
+
+<div align="center">
+
+[![GitHub issues](https://img.shields.io/github/issues/itning/hass-aliyun_bailian_tts.svg)](https://github.com/itning/hass-aliyun_bailian_tts/issues)
+[![GitHub license](https://img.shields.io/github/license/itning/hass-aliyun_bailian_tts.svg)](https://github.com/itning/hass-aliyun_bailian_tts/blob/master/LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/itning/hass-aliyun_bailian_tts.svg)](https://github.com/itning/hass-aliyun_bailian_tts/commits)
+[![GitHub repo size in bytes](https://img.shields.io/github/repo-size/itning/hass-aliyun_bailian_tts.svg)](https://github.com/itning/hass-aliyun_bailian_tts)
+[![Hits](https://hitcount.itning.com?u=itning&r=hass-aliyun_bailian_tts)](https://github.com/itning/hit-count)
+
+</div>
+
+---
 
 [ENGLISH README](https://github.com/itning/hass-aliyun_bailian_tts/blob/main/README-en.md)
 
