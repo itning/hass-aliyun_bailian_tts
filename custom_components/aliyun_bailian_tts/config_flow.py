@@ -12,8 +12,19 @@ class AliyunBaiLianTTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
 
-        # 创建一个空的配置条目
-        return self.async_create_entry(title="Aliyun BaiLian TTS", data={})
+        # 如果用户提供了输入，创建配置条目
+        if user_input is not None:
+            return self.async_create_entry(title="Aliyun BaiLian TTS", data=user_input)
+
+        # 显示表单让用户输入配置
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema({
+                vol.Required(CONF_TOKEN): str,
+                vol.Optional(CONF_MODEL, default="cosyvoice-v1"): str,
+                vol.Optional(CONF_VOICE, default="longxiaochun"): str,
+            })
+        )
 
     @staticmethod
     @callback
@@ -31,20 +42,15 @@ class AliyunBaiLianTTSOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         """Manage the options."""
         if user_input is not None:
-            # 更新配置到 hass.data
-            self.hass.data[DOMAIN] = user_input
+            # 更新配置到 config_entry
             return self.async_create_entry(title="Aliyun BaiLian TTS Options", data=user_input)
 
-        # 默认值从现有配置中读取，如果不存在则使用默认值
-        default_token = self._config_entry.options.get(CONF_TOKEN, "")
-        default_model = self._config_entry.options.get(CONF_MODEL, "cosyvoice-v1")
-        default_voice = self._config_entry.options.get(CONF_VOICE, "longxiaochun")
-
+        # 默认值从现有配置中读取
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema({
-                vol.Required(CONF_TOKEN, default=default_token): str,
-                vol.Optional(CONF_MODEL, default=default_model): str,
-                vol.Optional(CONF_VOICE, default=default_voice): str,
+                vol.Required(CONF_TOKEN, default=self._config_entry.data.get(CONF_TOKEN, "")): str,
+                vol.Optional(CONF_MODEL, default=self._config_entry.data.get(CONF_MODEL, "cosyvoice-v1")): str,
+                vol.Optional(CONF_VOICE, default=self._config_entry.data.get(CONF_VOICE, "longxiaochun")): str,
             })
         )
