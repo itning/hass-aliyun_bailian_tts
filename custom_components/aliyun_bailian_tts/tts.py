@@ -28,6 +28,9 @@ class AliyunBaiLianTTSProvider(Provider):
             # 动态读取最新配置
             config = self.hass.data.get(DOMAIN, {})
             dashscope.api_key = config.get(CONF_TOKEN)
+            if not dashscope.api_key:
+                raise ValueError("API Key is not set in configuration")
+
             model = config.get(CONF_MODEL, "cosyvoice-v1")
             voice = config.get(CONF_VOICE, "longxiaochun")
 
@@ -35,8 +38,11 @@ class AliyunBaiLianTTSProvider(Provider):
 
             start_time = time.perf_counter()
             audio = await self.hass.async_add_executor_job(synthesizer.call, message)
-            end_time = time.perf_counter()
+            if audio is None:
+                _LOGGER.error("SpeechSynthesizer returned None for message: %s", message)
+                raise HomeAssistantError("SpeechSynthesizer returned None")
 
+            end_time = time.perf_counter()
             elapsed_time = (end_time - start_time) * 1000
             _LOGGER.info(
                 '[Metric] requestId: %s, first package delay ms: %s, elapsed_time: %sms',
@@ -47,7 +53,7 @@ class AliyunBaiLianTTSProvider(Provider):
 
             return "mp3", audio
         except Exception as e:
-            _LOGGER.error("Error generating TTS audio: %s", e)
+            _LOGGER.error("Error generating TTS audio: %s", e, exc_info=True)
             raise HomeAssistantError(f"Error generating TTS audio: {e}")
 
 
