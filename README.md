@@ -59,7 +59,7 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
 
 7. 点击添加的`Aliyun BaiLian TTS`进入配置页面
 
-8. 点击配置按钮，输入百炼平台Token （https://bailian.console.aliyun.com/?apiKey=1#/api-key）
+8. 点击配置按钮，输入百炼平台Token （[https://bailian.console.aliyun.com/?apiKey=1#/api-key](https://bailian.console.aliyun.com/?tab=model#/api-key)）
 
    音色（Voice）列表：https://help.aliyun.com/zh/model-studio/developer-reference/timbre-list
 
