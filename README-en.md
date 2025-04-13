@@ -55,7 +55,7 @@ Currently, only **CosyVoice** is supported. For more information, please refer t
 
 7. Click on the added `Aliyun BaiLian TTS` to enter the configuration page.
 
-8. Click the **Configure** button, and enter your BaiLian Platform Token (https://bailian.console.aliyun.com/?apiKey=1#/api-key).
+8. Click the **Configure** button, and enter your BaiLian Platform Token (https://bailian.console.aliyun.com/?tab=model#/api-key).
 
    Voice list: https://help.aliyun.com/zh/model-studio/developer-reference/timbre-list
 
