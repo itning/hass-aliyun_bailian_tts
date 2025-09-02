@@ -24,10 +24,11 @@
 [ENGLISH README](https://github.com/itning/hass-aliyun_bailian_tts/blob/main/README-en.md)
 
 ## 简介
-Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.aliyun.com/)的语音合成CosyVoice大模型
+Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.aliyun.com/)的语音合成大模型
 
-目前只支持`CosyVoice` 具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/developer-reference/cosyvoice-large-model-for-speech-synthesis/
-)
+目前支持以下两种语音合成模型：
+1. `CosyVoice` - 语音合成CosyVoice大模型，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/developer-reference/cosyvoice-large-model-for-speech-synthesis/)
+2. `Qwen-TTS` - 通义千问系列的语音合成模型，支持输入中文、英文、中英混合的文本，并流式输出音频，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/qwen-tts)
 
 ## 安装
 
@@ -61,8 +62,14 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
 
 8. 点击配置按钮，输入百炼平台Token （https://bailian.console.aliyun.com/?tab=model#/api-key）
 
-   音色（Voice）列表：https://help.aliyun.com/zh/model-studio/developer-reference/timbre-list
-
+   音色（Voice）列表：
+   - CosyVoice: https://help.aliyun.com/zh/model-studio/text-to-speech
+   - Qwen-TTS: https://help.aliyun.com/zh/model-studio/qwen-tts
+   
+   模型（Model）列表：
+   - CosyVoice模型：`cosyvoice-v1`等
+   - Qwen-TTS模型：`qwen-tts`、`qwen-tts-latest`、`qwen-tts-2025-05-22`、`qwen-tts-2025-04-10`
+   
    输入完成后，点击提交。
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/5.png)

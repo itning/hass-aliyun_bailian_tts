@@ -22,9 +22,11 @@
 ---
 
 ## Introduction
-The Home Assistant TTS (Text-to-Speech) feature leverages the voice synthesis capabilities of the **CosyVoice** large language model from the [Aliyun BaiLian Platform](https://bailian.console.aliyun.com/).
+The Home Assistant TTS (Text-to-Speech) feature leverages the voice synthesis capabilities of large language models from the [Aliyun BaiLian Platform](https://bailian.console.aliyun.com/).
 
-Currently, only **CosyVoice** is supported. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/developer-reference/cosyvoice-large-model-for-speech-synthesis/).
+Currently supports the following two speech synthesis models:
+1. `CosyVoice` - CosyVoice large model for speech synthesis. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/developer-reference/cosyvoice-large-model-for-speech-synthesis/)
+2. `Qwen-TTS` - Speech synthesis model of the Qwen series, which supports inputting Chinese, English, and mixed Chinese-English text, and streamingly outputs audio. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/qwen-tts)
 
 ## Installation
 
@@ -57,8 +59,14 @@ Currently, only **CosyVoice** is supported. For more information, please refer t
 
 8. Click the **Configure** button, and enter your BaiLian Platform Token (https://bailian.console.aliyun.com/?tab=model#/api-key).
 
-   Voice list: https://help.aliyun.com/zh/model-studio/developer-reference/timbre-list
-
+   Voice list:
+   - CosyVoice: https://help.aliyun.com/zh/model-studio/developer-reference/timbre-list
+   - Qwen-TTS: https://help.aliyun.com/zh/model-studio/qwen-tts
+   
+   Model list:
+   - CosyVoice models: `cosyvoice-v1`, etc.
+   - Qwen-TTS models: `qwen-tts`, `qwen-tts-latest`, `qwen-tts-2025-05-22`, `qwen-tts-2025-04-10`
+   
    After entering the information, click **Submit**.
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/5.png)
