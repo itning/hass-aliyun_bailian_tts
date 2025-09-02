@@ -35,7 +35,8 @@ class AliyunBaiLianTTSProvider(Provider):
         )
 
         if responses is None:
-            _LOGGER.error("SpeechSynthesizer returned None or empty audio for message: %s", message)
+            _LOGGER.error("qwen SpeechSynthesizer returned None or empty audio for message: %s model: %s voice: %s",
+                          message, model, voice)
             raise HomeAssistantError("SpeechSynthesizer returned None or empty audio")
 
         input_tokens: int = 0
@@ -92,7 +93,8 @@ class AliyunBaiLianTTSProvider(Provider):
                 _LOGGER.error("not supported model: %s", model)
                 raise HomeAssistantError("not supported model: " + model)
             if audio_data is None or len(audio_data) == 0:
-                _LOGGER.error("SpeechSynthesizer returned None or empty audio for message: %s", message)
+                _LOGGER.error("SpeechSynthesizer returned None or empty audio for message: %s model: %s voice: %s",
+                              message, model, voice)
                 raise HomeAssistantError("SpeechSynthesizer returned None or empty audio")
 
             return audio_format, audio_data
