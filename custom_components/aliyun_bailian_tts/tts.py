@@ -79,14 +79,27 @@ class AliyunBaiLianTTSProvider(Provider):
     async def async_get_tts_audio(self, message: str, language: str, options=None) -> TtsAudioType:
         """Generate TTS audio."""
         try:
-            # 动态读取最新配置
-            config = self.hass.data.get(DOMAIN, {})
-            dashscope.api_key = config.get(CONF_TOKEN)
+            # 获取最新的配置
+            config_entry = None
+            config_entries = self.hass.config_entries.async_entries(DOMAIN)
+            if config_entries:
+                config_entry = config_entries[0]
+
+            if config_entry:
+                config = config_entry.data
+                options = config_entry.options
+                # 合并data和options，options优先
+                merged_config = {**config, **options} if options else config
+            else:
+                # 回退到旧方法
+                merged_config = self.hass.data.get(DOMAIN, {})
+
+            dashscope.api_key = merged_config.get(CONF_TOKEN)
             if not dashscope.api_key:
                 raise ValueError("API Key is not set in configuration")
 
-            model = config.get(CONF_MODEL, "cosyvoice-v1")
-            voice = config.get(CONF_VOICE, "longxiaochun")
+            model = merged_config.get(CONF_MODEL, "cosyvoice-v1")
+            voice = merged_config.get(CONF_VOICE, "longxiaochun")
 
             if model.startswith("qwen"):
                 audio_data = await self.hass.async_add_executor_job(self._process_qwen_tts, model, voice, message)
