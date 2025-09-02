@@ -41,11 +41,16 @@ class AliyunBaiLianTTSProvider(Provider):
         input_tokens: int = 0
         output_tokens: int = 0
         for chunk in responses:
-            audio_string = chunk.output.audio.data
-            input_tokens += chunk.usage.input_tokens
-            output_tokens += chunk.usage.output_tokens
-            wav_bytes: bytes = base64.b64decode(audio_string)
-            audio = audio + wav_bytes
+            if (chunk.get("output") and
+                    chunk["output"].get("audio") and
+                    chunk["output"]["audio"].get("data")):
+                audio_string = chunk["output"]["audio"]["data"]
+                wav_bytes: bytes = base64.b64decode(audio_string)
+                audio = audio + wav_bytes
+
+            if chunk.get("usage"):
+                input_tokens += chunk["usage"].get("input_tokens", 0)
+                output_tokens += chunk["usage"].get("output_tokens", 0)
         _LOGGER.info("input_tokens: %d, output_tokens: %d", input_tokens, output_tokens)
 
         return audio
