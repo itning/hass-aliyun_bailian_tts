@@ -1,7 +1,16 @@
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
+
 from .const import DOMAIN, CONF_TOKEN, CONF_MODEL, CONF_VOICE
+
+OPTIONS_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_TOKEN): str,
+        vol.Optional(CONF_MODEL, default="cosyvoice-v1"): str,
+        vol.Optional(CONF_VOICE, default="longxiaochun"): str,
+    }
+)
 
 class AliyunBaiLianTTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Aliyun BaiLian TTS config flow."""
@@ -19,11 +28,7 @@ class AliyunBaiLianTTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # 显示表单让用户输入配置
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({
-                vol.Required(CONF_TOKEN): str,
-                vol.Optional(CONF_MODEL, default="cosyvoice-v1"): str,
-                vol.Optional(CONF_VOICE, default="longxiaochun"): str,
-            })
+            data_schema=OPTIONS_SCHEMA
         )
 
     @staticmethod
@@ -31,6 +36,7 @@ class AliyunBaiLianTTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(config_entry):
         """Get the options flow for this handler."""
         return AliyunBaiLianTTSOptionsFlowHandler(config_entry)
+
 
 class AliyunBaiLianTTSOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle an options flow for Aliyun BaiLian TTS."""
@@ -48,9 +54,7 @@ class AliyunBaiLianTTSOptionsFlowHandler(config_entries.OptionsFlow):
         # 默认值从现有配置中读取
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({
-                vol.Required(CONF_TOKEN, default=self._config_entry.data.get(CONF_TOKEN, "")): str,
-                vol.Optional(CONF_MODEL, default=self._config_entry.data.get(CONF_MODEL, "cosyvoice-v1")): str,
-                vol.Optional(CONF_VOICE, default=self._config_entry.data.get(CONF_VOICE, "longxiaochun")): str,
-            })
+            data_schema=self.add_suggested_values_to_schema(
+                OPTIONS_SCHEMA, self.config_entry.options
+            ),
         )
