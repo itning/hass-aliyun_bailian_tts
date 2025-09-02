@@ -1,5 +1,6 @@
 import base64
 import logging
+import struct
 import time
 
 import dashscope
@@ -26,6 +27,25 @@ class AliyunBaiLianTTSProvider(Provider):
 
     @staticmethod
     def _process_qwen_tts(model: str, voice: str, message: str) -> bytes:
+        def create_wav_header(data_size, channels=1, sample_rate=24000, bits_per_sample=16):
+            """创建WAV文件头"""
+            riff = b'RIFF'
+            filesize = 36 + data_size
+            wave_fmt = b'WAVE'
+            fmt = b'fmt '
+            subchunk1_size = 16
+            audio_format = 1  # PCM
+            byte_rate = sample_rate * channels * bits_per_sample // 8
+            block_align = channels * bits_per_sample // 8
+            subchunk2_id = b'data'
+
+            header = riff + struct.pack('<I', filesize) + wave_fmt + fmt
+            header += struct.pack('<IHHIIHH', subchunk1_size, audio_format, channels,
+                                  sample_rate, byte_rate, block_align, bits_per_sample)
+            header += subchunk2_id + struct.pack('<I', data_size)
+
+            return header
+
         audio: bytes = bytes()
         responses = dashscope.audio.qwen_tts.SpeechSynthesizer.call(
             model=model,
@@ -58,7 +78,8 @@ class AliyunBaiLianTTSProvider(Provider):
                 input_tokens += chunk["usage"].get("input_tokens", 0)
                 output_tokens += chunk["usage"].get("output_tokens", 0)
         _LOGGER.info("input_tokens: %d, output_tokens: %d", input_tokens, output_tokens)
-
+        wav_header = create_wav_header(len(audio))
+        audio = wav_header + audio
         return audio
 
     @staticmethod
