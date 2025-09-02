@@ -42,6 +42,11 @@ class AliyunBaiLianTTSProvider(Provider):
         input_tokens: int = 0
         output_tokens: int = 0
         for chunk in responses:
+            if chunk.status_code != 200:
+                _LOGGER.error(
+                    "qwen SpeechSynthesizer returned error. status_code: %s request_id: %s code: %s message: %s model: %s voice: %s message: %s",
+                    chunk.status_code, chunk.request_id, chunk.code, chunk.message, model, voice, message)
+                raise HomeAssistantError("SpeechSynthesizer returned error: " + chunk.message)
             if (chunk.get("output") and
                     chunk["output"].get("audio") and
                     chunk["output"]["audio"].get("data")):
