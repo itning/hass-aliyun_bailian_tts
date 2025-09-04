@@ -25,6 +25,20 @@ class AliyunBaiLianTTSProvider(Provider):
     def supported_languages(self):
         return ["en", "zh"]
 
+    def _get_current_config(self):
+        """获取当前的配置，优先使用 options"""
+        config_entries = self.hass.config_entries.async_entries(DOMAIN)
+        if config_entries:
+            config_entry = config_entries[0]
+            # 优先使用 options，如果没有则使用 data
+            if config_entry.options:
+                return config_entry.options
+            else:
+                return config_entry.data
+
+        # 回退到旧的存储方式
+        return self.hass.data.get(DOMAIN, {})
+
     @staticmethod
     def _process_qwen_tts(model: str, voice: str, message: str) -> bytes:
         def create_wav_header(data_size, channels=1, sample_rate=24000, bits_per_sample=16):
@@ -100,27 +114,15 @@ class AliyunBaiLianTTSProvider(Provider):
     async def async_get_tts_audio(self, message: str, language: str, options=None) -> TtsAudioType:
         """Generate TTS audio."""
         try:
-            # 获取最新的配置
-            config_entry = None
-            config_entries = self.hass.config_entries.async_entries(DOMAIN)
-            if config_entries:
-                config_entry = config_entries[0]
+            # 获取当前配置
+            config = self._get_current_config()
 
-            if config_entry:
-                config = config_entry.data
-                options = config_entry.options
-                # 合并data和options，options优先
-                merged_config = {**config, **options} if options else config
-            else:
-                # 回退到旧方法
-                merged_config = self.hass.data.get(DOMAIN, {})
-
-            dashscope.api_key = merged_config.get(CONF_TOKEN)
+            dashscope.api_key = config.get(CONF_TOKEN)
             if not dashscope.api_key:
                 raise ValueError("API Key is not set in configuration")
 
-            model = merged_config.get(CONF_MODEL, "cosyvoice-v1")
-            voice = merged_config.get(CONF_VOICE, "longxiaochun")
+            model = config.get(CONF_MODEL, "cosyvoice-v1")
+            voice = config.get(CONF_VOICE, "longxiaochun")
 
             if model.startswith("qwen"):
                 audio_data = await self.hass.async_add_executor_job(self._process_qwen_tts, model, voice, message)
@@ -131,6 +133,7 @@ class AliyunBaiLianTTSProvider(Provider):
             else:
                 _LOGGER.error("not supported model: %s", model)
                 raise HomeAssistantError("not supported model: " + model)
+
             if audio_data is None or len(audio_data) == 0:
                 _LOGGER.error("SpeechSynthesizer returned None or empty audio for message: %s model: %s voice: %s",
                               message, model, voice)
