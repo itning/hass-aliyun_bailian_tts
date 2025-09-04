@@ -82,7 +82,7 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
 
 ## 结尾
 
-此项目大部分代码是由大模型[qwen-max-2025-01-25](https://bailian.console.aliyun.com/model-market/detail/qwen-max-2025-01-25#/model-market/detail/qwen-max-2025-01-25)生成的。
+此项目前期大部分代码是由大模型[qwen-max-2025-01-25](https://bailian.console.aliyun.com/model-market/detail/qwen-max-2025-01-25#/model-market/detail/qwen-max-2025-01-25)生成的，后期使用Claude Sonnet 4。
 
 ## 感谢
 
