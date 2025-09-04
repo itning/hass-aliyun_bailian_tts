@@ -51,10 +51,19 @@ class AliyunBaiLianTTSOptionsFlowHandler(config_entries.OptionsFlow):
             # 更新配置到 config_entry
             return self.async_create_entry(title="Aliyun BaiLian TTS Options", data=user_input)
 
-        # 默认值从现有配置中读取
+        # 获取当前的配置值，优先从 options 读取，如果没有则从 data 读取
+        current_config = {}
+        if self.config_entry.options:
+            # 如果已经有 options，使用它们
+            current_config = self.config_entry.options
+        else:
+            # 如果没有 options，从 data 中读取（第一次打开设置页面的情况）
+            current_config = self.config_entry.data
+
+        # 显示表单，用当前配置作为默认值
         return self.async_show_form(
             step_id="init",
             data_schema=self.add_suggested_values_to_schema(
-                OPTIONS_SCHEMA, self.config_entry.options
+                OPTIONS_SCHEMA, current_config
             ),
         )
