@@ -32,7 +32,7 @@ Currently supports the following two speech synthesis models:
 
 ### Installation via HACS
 
-1. Go to the HACS panel, click the menu button in the top-right corner, and add a custom integration.
+1. [![Open your Home Assistant instance and open the hass-aliyun_bailian_tts integration inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=itning&repository=hass-aliyun_bailian_tts&category=integration) Go to the HACS panel, click the menu button in the top-right corner, and add a custom integration.
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/1.png)
 
