@@ -26,7 +26,7 @@ The Home Assistant TTS (Text-to-Speech) feature leverages the voice synthesis ca
 
 Currently supports the following two speech synthesis models:
 1. `CosyVoice` - CosyVoice large model for speech synthesis. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/developer-reference/cosyvoice-large-model-for-speech-synthesis/)
-2. `Qwen-TTS` - Speech synthesis model of the Qwen series, which supports inputting Chinese, English, and mixed Chinese-English text, and streamingly outputs audio. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/qwen-tts)
+2. `Qwen3-TTS` `Qwen-TTS` - Speech synthesis model of the Qwen series, which supports inputting Chinese, English, and mixed Chinese-English text, and streamingly outputs audio. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/qwen-tts)
 
 ## Installation
 
@@ -66,6 +66,7 @@ Currently supports the following two speech synthesis models:
    Model list:
    - CosyVoice models: `cosyvoice-v1`, etc.
    - Qwen-TTS models: `qwen-tts`, `qwen-tts-latest`, `qwen-tts-2025-05-22`, `qwen-tts-2025-04-10`
+   - Qwen3-TTS models: `qwen3-tts-flash`, `qwen3-tts-flash-2025-09-18`
    
    After entering the information, click **Submit**.
 

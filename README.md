@@ -28,7 +28,7 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
 
 目前支持以下两种语音合成模型：
 1. `CosyVoice` - 语音合成CosyVoice大模型，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/developer-reference/cosyvoice-large-model-for-speech-synthesis/)
-2. `Qwen-TTS` - 通义千问系列的语音合成模型，支持输入中文、英文、中英混合的文本，并流式输出音频，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/qwen-tts)
+2. `Qwen3-TTS` `Qwen-TTS` - 通义千问系列的语音合成模型，支持输入中文、英文、中英混合的文本，并流式输出音频，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/qwen-tts)
 
 ## 安装
 
@@ -69,6 +69,7 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
    模型（Model）列表：
    - CosyVoice模型：`cosyvoice-v1`等
    - Qwen-TTS模型：`qwen-tts`、`qwen-tts-latest`、`qwen-tts-2025-05-22`、`qwen-tts-2025-04-10`
+   - Qwen3-TTS模型：`qwen3-tts-flash`、`qwen3-tts-flash-2025-09-18`
    
    输入完成后，点击提交。
 

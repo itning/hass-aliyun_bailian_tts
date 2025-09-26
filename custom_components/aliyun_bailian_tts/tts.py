@@ -121,8 +121,8 @@ class AliyunBaiLianTTSProvider(Provider):
             if not dashscope.api_key:
                 raise ValueError("API Key is not set in configuration")
 
-            model = config.get(CONF_MODEL, "cosyvoice-v1")
-            voice = config.get(CONF_VOICE, "longxiaochun")
+            model = config.get(CONF_MODEL, "qwen3-tts-flash")
+            voice = config.get(CONF_VOICE, "Cherry")
 
             if model.startswith("qwen"):
                 audio_data = await self.hass.async_add_executor_job(self._process_qwen_tts, model, voice, message)

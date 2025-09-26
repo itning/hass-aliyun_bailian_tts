@@ -10,8 +10,8 @@ from .const import DOMAIN, CONF_TOKEN, CONF_MODEL, CONF_VOICE
 OPTIONS_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_TOKEN): str,
-        vol.Optional(CONF_MODEL, default="cosyvoice-v1"): str,
-        vol.Optional(CONF_VOICE, default="longxiaochun"): str,
+        vol.Optional(CONF_MODEL, default="qwen3-tts-flash"): str,
+        vol.Optional(CONF_VOICE, default="Cherry"): str,
     }
 )
 
