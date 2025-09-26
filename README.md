@@ -34,7 +34,7 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
 
 ### 通过HACS安装
 
-1. 前往HACS面板，点击右上角菜单，添加自定义集成 
+1. [![Open your Home Assistant instance and open the hass-aliyun_bailian_tts integration inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=itning&repository=hass-aliyun_bailian_tts&category=integration) 前往HACS面板，点击右上角菜单，添加自定义集成 
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/1.png)
 
@@ -83,7 +83,7 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
 
 ## 结尾
 
-此项目大部分代码是由大模型[qwen-max-2025-01-25](https://bailian.console.aliyun.com/model-market/detail/qwen-max-2025-01-25#/model-market/detail/qwen-max-2025-01-25)生成的。
+此项目前期大部分代码是由大模型[qwen-max-2025-01-25](https://bailian.console.aliyun.com/model-market/detail/qwen-max-2025-01-25#/model-market/detail/qwen-max-2025-01-25)生成的，后期使用Claude Sonnet 4。
 
 ## 感谢
 
