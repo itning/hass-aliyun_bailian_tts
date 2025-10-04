@@ -1,0 +1,46 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "配置 Aliyun BaiLian TTS",
+        "description": "为这个TTS实例配置参数。您可以添加多个实例来使用不同的语音角色。",
+        "data": {
+          "name": "实例名称",
+          "token": "API Token",
+          "model": "模型",
+          "voice": "语音角色"
+        },
+        "data_description": {
+          "name": "为这个TTS实例起一个唯一的名称，例如：女声助手、男声助手等"
+        }
+      }
+    },
+    "error": {
+      "invalid_token": "Token 不能为空",
+      "invalid_name": "名称不能为空",
+      "name_exists": "该名称已存在，请使用其他名称"
+    },
+    "abort": {
+      "name_exists": "该名称已被使用"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "配置 Aliyun BaiLian TTS",
+        "description": "修改此 TTS 实例的配置",
+        "data": {
+          "name": "实例名称",
+          "token": "API Token",
+          "model": "模型",
+          "voice": "语音角色"
+        }
+      }
+    },
+    "error": {
+      "invalid_token": "Token 不能为空",
+      "invalid_name": "名称不能为空",
+      "name_exists": "该名称已存在，请使用其他名称"
+    }
+  }
+}
