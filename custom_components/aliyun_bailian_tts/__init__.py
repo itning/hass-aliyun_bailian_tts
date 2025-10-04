@@ -22,8 +22,14 @@ async def async_setup_entry(hass, entry):
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry
 
-    # 加载 TTS 平台
-    await async_load_platform(hass, TTS_DOMAIN, DOMAIN, entry.data, {})
+    # 加载 TTS 平台，传递 entry_id 用于区分不同实例
+    await async_load_platform(
+        hass,
+        TTS_DOMAIN,
+        DOMAIN,
+        {"entry_id": entry.entry_id, **entry.data},
+        {}
+    )
 
     # 监听选项更新事件
     entry.async_on_unload(entry.add_update_listener(async_update_options))

@@ -5,10 +5,11 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import DOMAIN, CONF_TOKEN, CONF_MODEL, CONF_VOICE
+from .const import DOMAIN, CONF_TOKEN, CONF_MODEL, CONF_VOICE, CONF_NAME
 
 OPTIONS_SCHEMA = vol.Schema(
     {
+        vol.Required(CONF_NAME): str,
         vol.Required(CONF_TOKEN): str,
         vol.Optional(CONF_MODEL, default="qwen3-tts-flash"): str,
         vol.Optional(CONF_VOICE, default="Cherry"): str,
@@ -23,10 +24,6 @@ class AliyunBaiLianTTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle a flow initiated by the user."""
-        # 检查是否已经有配置条目
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
-
         errors = {}
 
         # 如果用户提供了输入，验证并创建配置条目
@@ -35,10 +32,21 @@ class AliyunBaiLianTTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not user_input.get(CONF_TOKEN):
                 errors[CONF_TOKEN] = "invalid_token"
 
+            if not user_input.get(CONF_NAME):
+                errors[CONF_NAME] = "invalid_name"
+
+            # 检查名称是否已存在
+            existing_entries = self._async_current_entries()
+            for entry in existing_entries:
+                entry_name = entry.options.get(CONF_NAME) or entry.data.get(CONF_NAME)
+                if entry_name == user_input.get(CONF_NAME):
+                    errors[CONF_NAME] = "name_exists"
+                    break
+
             if not errors:
-                # 创建配置条目，同时将数据保存到 options 中
+                # 创建配置条目，使用自定义名称作为标题
                 return self.async_create_entry(
-                    title="Aliyun BaiLian TTS",
+                    title=f"Aliyun BaiLian TTS - {user_input[CONF_NAME]}",
                     data=user_input,
                     options=user_input  # 同时保存到 options 中
                 )
@@ -47,18 +55,28 @@ class AliyunBaiLianTTSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=OPTIONS_SCHEMA,
-            errors=errors
+            errors=errors,
+            description_placeholders={
+                "name": "为这个TTS实例起一个唯一的名称，例如：女声助手、男声助手等"
+            }
         )
 
     async def async_step_import(self, import_config: dict[str, Any]) -> FlowResult:
         """Handle import from configuration.yaml."""
-        # 检查是否已经有配置条目
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
+        # 为导入的配置生成默认名称
+        if CONF_NAME not in import_config:
+            import_config[CONF_NAME] = "Default"
+
+        # 检查名称是否已存在
+        existing_entries = self._async_current_entries()
+        for entry in existing_entries:
+            entry_name = entry.options.get(CONF_NAME) or entry.data.get(CONF_NAME)
+            if entry_name == import_config[CONF_NAME]:
+                return self.async_abort(reason="name_exists")
 
         # 从 configuration.yaml 导入时也同时保存到 options
         return self.async_create_entry(
-            title="Aliyun BaiLian TTS",
+            title=f"Aliyun BaiLian TTS - {import_config[CONF_NAME]}",
             data=import_config,
             options=import_config
         )
@@ -86,7 +104,24 @@ class AliyunBaiLianTTSOptionsFlowHandler(config_entries.OptionsFlow):
             if not user_input.get(CONF_TOKEN):
                 errors[CONF_TOKEN] = "invalid_token"
 
+            if not user_input.get(CONF_NAME):
+                errors[CONF_NAME] = "invalid_name"
+
+            # 检查名称是否与其他实例冲突（排除当前实例）
+            existing_entries = self.hass.config_entries.async_entries(DOMAIN)
+            for entry in existing_entries:
+                if entry.entry_id != self._config_entry.entry_id:
+                    entry_name = entry.options.get(CONF_NAME) or entry.data.get(CONF_NAME)
+                    if entry_name == user_input.get(CONF_NAME):
+                        errors[CONF_NAME] = "name_exists"
+                        break
+
             if not errors:
+                # 更新配置条目的标题
+                self.hass.config_entries.async_update_entry(
+                    self._config_entry,
+                    title=f"Aliyun BaiLian TTS - {user_input[CONF_NAME]}"
+                )
                 return self.async_create_entry(title="", data=user_input)
 
         # 获取当前的配置值，优先从 options 读取，如果没有则从 data 读取

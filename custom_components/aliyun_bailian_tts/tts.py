@@ -7,15 +7,18 @@ import dashscope
 from homeassistant.components.tts import Provider, TtsAudioType
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import CONF_TOKEN, CONF_MODEL, CONF_VOICE, DOMAIN
+from .const import CONF_TOKEN, CONF_MODEL, CONF_VOICE, CONF_NAME, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class AliyunBaiLianTTSProvider(Provider):
-    def __init__(self, hass, config):
+    def __init__(self, hass, config, entry_id=None):
         self.hass = hass
-        self.name = "Aliyun Bailian TTS"
+        self._entry_id = entry_id
+        # 从配置中获取名称，用于生成唯一的 TTS 实体名称
+        name_suffix = config.get(CONF_NAME, "Default")
+        self.name = f"Aliyun Bailian TTS {name_suffix}"
 
     @property
     def default_language(self):
@@ -26,18 +29,26 @@ class AliyunBaiLianTTSProvider(Provider):
         return ["en", "zh"]
 
     def _get_current_config(self):
-        """获取当前的配置，优先使用 options"""
+        """获取当前实例的配置，优先使用 options"""
+        if self._entry_id and DOMAIN in self.hass.data:
+            entry = self.hass.data[DOMAIN].get(self._entry_id)
+            if entry:
+                # 优先使用 options，如果没有则使用 data
+                if entry.options:
+                    return entry.options
+                else:
+                    return entry.data
+
+        # 回退：如果没有 entry_id，尝试查找第一个配置
         config_entries = self.hass.config_entries.async_entries(DOMAIN)
         if config_entries:
             config_entry = config_entries[0]
-            # 优先使用 options，如果没有则使用 data
             if config_entry.options:
                 return config_entry.options
             else:
                 return config_entry.data
 
-        # 回退到旧的存储方式
-        return self.hass.data.get(DOMAIN, {})
+        return {}
 
     @staticmethod
     def _process_qwen_tts(model: str, voice: str, message: str) -> bytes:
@@ -148,4 +159,5 @@ class AliyunBaiLianTTSProvider(Provider):
 
 async def async_get_engine(hass, config, discovery_info=None):
     """Set up the Aliyun BaiLian TTS platform."""
-    return AliyunBaiLianTTSProvider(hass, config)
+    entry_id = config.get("entry_id") if config else None
+    return AliyunBaiLianTTSProvider(hass, config, entry_id)
