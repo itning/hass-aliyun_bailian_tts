@@ -1,47 +1,41 @@
-from homeassistant.components.tts import DOMAIN as TTS_DOMAIN
-from homeassistant.helpers.discovery import async_load_platform
+"""The Aliyun BaiLian TTS integration."""
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 
-
-async def async_setup(hass, config):
-    """Set up the Aliyun BaiLian TTS component from configuration.yaml."""
-    if config.get(DOMAIN):
-        # 如果配置来自 configuration.yaml，建议将其迁移到 config_entry
-        hass.async_create_task(
-            hass.config_entries.flow.async_init(
-                DOMAIN, context={"source": "import"}, data=config[DOMAIN]
-            )
-        )
-    return True
+PLATFORMS: list[Platform] = [Platform.TTS]
 
 
-async def async_setup_entry(hass, entry):
-    """Set up the Aliyun BaiLian TTS component from a config entry."""
-    # 将配置存储到 hass.data
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up Aliyun BaiLian TTS from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry
 
-    # 加载 TTS 平台
-    await async_load_platform(hass, TTS_DOMAIN, DOMAIN, entry.data, {})
+    # Forward the setup to the tts platform
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # 监听选项更新事件
+    # Listen for options updates
     entry.async_on_unload(entry.add_update_listener(async_update_options))
 
     return True
 
 
-async def async_unload_entry(hass, entry):
-    """Unload the Aliyun BaiLian TTS component."""
-    # 清理存储的数据
-    if DOMAIN in hass.data:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    # Unload the platform
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    if unload_ok:
+        # Remove the entry from hass.data
         hass.data[DOMAIN].pop(entry.entry_id, None)
         if not hass.data[DOMAIN]:
             hass.data.pop(DOMAIN, None)
-    return True
+
+    return unload_ok
 
 
-async def async_update_options(hass, config_entry):
+async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Update options when they are changed."""
-    # 当选项更新时，重新加载集成
-    await hass.config_entries.async_reload(config_entry.entry_id)
+    await hass.config_entries.async_reload(entry.entry_id)
