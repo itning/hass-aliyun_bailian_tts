@@ -82,40 +82,6 @@ class StreamingCallback(QwenTtsRealtimeCallback):
             _LOGGER.warning("Wait for session finish timed out")
 
 
-async def _stream_realtime_tts(
-        model: str, voice: str, message_gen: AsyncGenerator[str], api_key: str
-) -> tuple[StreamingCallback, QwenTtsRealtime]:
-    """Start streaming TTS synthesis."""
-    dashscope.api_key = api_key
-
-    callback = StreamingCallback()
-
-    qwen_tts = QwenTtsRealtime(
-        model=model,
-        callback=callback,
-        url="wss://dashscope.aliyuncs.com/api-ws/v1/realtime",
-    )
-
-    try:
-        qwen_tts.connect()
-        qwen_tts.update_session(
-            voice=voice,
-            response_format=AudioFormat.PCM_24000HZ_MONO_16BIT,
-            mode="server_commit",
-        )
-
-        async for chunk in message_gen:
-            qwen_tts.append_text(chunk)
-
-        qwen_tts.finish()
-
-        return callback, qwen_tts
-
-    except Exception as e:
-        _LOGGER.error("Error starting streaming TTS: %s", e, exc_info=True)
-        raise HomeAssistantError(f"Error starting streaming TTS: {e}")
-
-
 def create_wav_header(
         data_size: int,
         channels: int = 1,
@@ -147,6 +113,35 @@ def create_wav_header(
     header += subchunk2_id + struct.pack("<I", data_size)
 
     return header
+
+
+def _sync_tts_worker(model, voice, api_key, callback, text_queue):
+    """Runs in executor thread."""
+    dashscope.api_key = api_key
+    qwen_tts = QwenTtsRealtime(
+        model=model,
+        callback=callback,
+        url="wss://dashscope.aliyuncs.com/api-ws/v1/realtime",
+    )
+    try:
+        qwen_tts.connect()
+        qwen_tts.update_session(
+            voice=voice,
+            response_format=AudioFormat.PCM_24000HZ_MONO_16BIT,
+            mode="server_commit",
+        )
+        while True:
+            text_chunk = text_queue.get()
+            if text_chunk is None: break
+            _LOGGER.debug("append_text %s", text_chunk)
+            qwen_tts.append_text(text_chunk)
+        qwen_tts.finish()
+    except Exception as e:
+        _LOGGER.error("Worker Error: %s", e)
+        callback.error = e
+        callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, None)
+    finally:
+        callback.complete_event.set()
 
 
 class AliyunBaiLianTTSEntity(TextToSpeechEntity):
@@ -211,8 +206,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
             )
             raise HomeAssistantError("TTS synthesis returned None")
 
-        input_tokens: int = 0
-        output_tokens: int = 0
 
         for chunk in responses:
             if chunk.status_code != 200:
@@ -229,12 +222,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
                 audio_string = chunk.output.audio.data
                 wav_bytes: bytes = base64.b64decode(audio_string)
                 audio += wav_bytes
-
-            if hasattr(chunk, "usage") and chunk.usage:
-                input_tokens += getattr(chunk.usage, "input_tokens", 0)
-                output_tokens += getattr(chunk.usage, "output_tokens", 0)
-
-        _LOGGER.info("Input tokens: %d, Output tokens: %d", input_tokens, output_tokens)
 
         wav_header = create_wav_header(len(audio))
         return wav_header + audio
@@ -322,43 +309,16 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
             _LOGGER.error("Error generating TTS audio: %s", e, exc_info=True)
             raise HomeAssistantError(f"Error generating TTS audio: {e}")
 
-    def _sync_tts_worker(self, model, voice, api_key, callback, text_queue):
-        """Runs in executor thread."""
-        dashscope.api_key = api_key
-        qwen_tts = QwenTtsRealtime(
-            model=model,
-            callback=callback,
-            url="wss://dashscope.aliyuncs.com/api-ws/v1/realtime",
-        )
-        try:
-            qwen_tts.connect()
-            qwen_tts.update_session(
-                voice=voice,
-                response_format=AudioFormat.PCM_24000HZ_MONO_16BIT,
-                mode="server_commit",
-            )
-            while True:
-                text_chunk = text_queue.get()
-                if text_chunk is None: break
-                _LOGGER.debug("append_text %s", text_chunk)
-                qwen_tts.append_text(text_chunk)
-            qwen_tts.finish()
-        except Exception as e:
-            _LOGGER.error("Worker Error: %s", e)
-            callback.error = e
-            callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, None)
-        finally:
-            callback.complete_event.set()
-
     async def async_stream_tts_audio(self, request: TTSAudioRequest) -> TTSAudioResponse:
         config = self._get_current_config()
         api_key = config.get(CONF_TOKEN)
         model = config.get(CONF_MODEL, "qwen3-tts-flash")
         voice = request.options.get(ATTR_VOICE, config.get(CONF_VOICE, "Cherry"))
 
-        if not model.endswith("-realtime"):
+        if 'realtime' not in model:
+            _LOGGER.info("Model not supported realtime stream, so sync get: %s", model)
             full_text = "".join([c async for c in request.message_gen])
-            fmt, data = await self.async_get_tts_audio(full_text, "zh", request.options)
+            fmt, data = await self.async_get_tts_audio(full_text, request.language, request.options)
 
             async def gen(): yield data
 
@@ -368,7 +328,7 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
         callback = StreamingCallback(asyncio.get_running_loop())
 
         worker_task = self.hass.async_add_executor_job(
-            self._sync_tts_worker, model, voice, api_key, callback, text_queue
+            _sync_tts_worker, model, voice, api_key, callback, text_queue
         )
 
         async def get_async_generator() -> AsyncGenerator[bytes, None]:
@@ -377,9 +337,9 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
             try:
                 async def fill_queue():
                     try:
-                        async for chunk in request.message_gen:
-                            _LOGGER.debug("request: %s", chunk)
-                            text_queue.put(chunk)
+                        async for msg in request.message_gen:
+                            _LOGGER.debug("request: %s", msg)
+                            text_queue.put(msg)
                     finally:
                         _LOGGER.debug("finished message_gen")
                         text_queue.put(None)
