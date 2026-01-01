@@ -57,21 +57,19 @@ class StreamingCallback(QwenTtsRealtimeCallback):
 
             if event_type == "response.audio.delta":
                 audio_chunk = base64.b64decode(response["delta"])
-                _LOGGER.debug("received data: %d", len(audio_chunk))
-                # 关键：从 SDK 线程安全地向主线程异步队列发送数据
+                _LOGGER.debug("Received audio chunk: %d bytes", len(audio_chunk))
                 self.loop.call_soon_threadsafe(self.audio_queue.put_nowait, audio_chunk)
             elif event_type == "session.created":
-                _LOGGER.debug("start session: %s", response['session']['id'])
+                _LOGGER.debug("Session created: %s", response.get('session', {}).get('id'))
             elif event_type == "response.done":
-                # 发送 None 标记结束
-                _LOGGER.debug("response.done")
+                _LOGGER.debug("Synthesis response complete")
                 self.loop.call_soon_threadsafe(self.audio_queue.put_nowait, None)
             elif event_type == "session.finished":
-                _LOGGER.debug("session.finished")
+                _LOGGER.debug("Session finished")
                 self.complete_event.set()
 
         except Exception as e:
-            _LOGGER.error("Error in callback: %s", e)
+            _LOGGER.error("Error in callback processing: %s", e)
             self.error = e
             self.loop.call_soon_threadsafe(self.audio_queue.put_nowait, None)
             self.complete_event.set()
@@ -80,7 +78,8 @@ class StreamingCallback(QwenTtsRealtimeCallback):
         return await self.audio_queue.get()
 
     def wait_for_finished(self):
-        self.complete_event.wait(timeout=10)  # 增加超时防止死锁
+        if not self.complete_event.wait(timeout=10):
+            _LOGGER.warning("Wait for session finish timed out")
 
 
 async def _stream_realtime_tts(
@@ -91,7 +90,6 @@ async def _stream_realtime_tts(
 
     callback = StreamingCallback()
 
-    # Initialize realtime TTS
     qwen_tts = QwenTtsRealtime(
         model=model,
         callback=callback,
@@ -99,7 +97,6 @@ async def _stream_realtime_tts(
     )
 
     try:
-        # Connect and configure session
         qwen_tts.connect()
         qwen_tts.update_session(
             voice=voice,
@@ -107,7 +104,6 @@ async def _stream_realtime_tts(
             mode="server_commit",
         )
 
-        # Send text for synthesis
         async for chunk in message_gen:
             qwen_tts.append_text(chunk)
 
@@ -197,7 +193,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
         """Process Qwen TTS synthesis."""
         audio: bytes = bytes()
 
-        # Use MultiModalConversation API
         responses = dashscope.MultiModalConversation.call(
             api_key=api_key,
             model=model,
@@ -241,7 +236,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
 
         _LOGGER.info("Input tokens: %d, Output tokens: %d", input_tokens, output_tokens)
 
-        # Add WAV header
         wav_header = create_wav_header(len(audio))
         return wav_header + audio
 
@@ -287,7 +281,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
             model = config.get(CONF_MODEL, "qwen3-tts-flash")
             voice = config.get(CONF_VOICE, "Cherry")
 
-            # Override voice if provided in options
             if options and ATTR_VOICE in options:
                 voice = options[ATTR_VOICE]
 
@@ -298,7 +291,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
                 language,
             )
 
-            # Set base URL for DashScope
             dashscope.base_http_api_url = "https://dashscope.aliyuncs.com/api/v1"
 
             if model.startswith("qwen"):
@@ -354,7 +346,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
         except Exception as e:
             _LOGGER.error("Worker Error: %s", e)
             callback.error = e
-            # 确保即使报错也发结束信号给回调
             callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, None)
         finally:
             callback.complete_event.set()
@@ -365,7 +356,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
         model = config.get(CONF_MODEL, "qwen3-tts-flash")
         voice = request.options.get(ATTR_VOICE, config.get(CONF_VOICE, "Cherry"))
 
-        # Fallback for non-realtime models
         if not model.endswith("-realtime"):
             full_text = "".join([c async for c in request.message_gen])
             fmt, data = await self.async_get_tts_audio(full_text, "zh", request.options)
@@ -377,7 +367,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
         text_queue = queue.Queue()
         callback = StreamingCallback(asyncio.get_running_loop())
 
-        # Start SDK in executor
         worker_task = self.hass.async_add_executor_job(
             self._sync_tts_worker, model, voice, api_key, callback, text_queue
         )
@@ -386,7 +375,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
             fill_task = None
             header_sent = False
             try:
-                # Task 1: Feed text from AsyncGenerator to Sync Queue
                 async def fill_queue():
                     try:
                         async for chunk in request.message_gen:
@@ -398,7 +386,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
 
                 fill_task = asyncio.create_task(fill_queue())
 
-                # Task 2: Yield audio chunks from Callback
                 while True:
                     chunk = await callback.get_audio_chunk()
                     if chunk is None:
@@ -406,7 +393,6 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
                         break
                     if callback.error:
                         raise callback.error
-                    _LOGGER.debug("chunk: %d", len(chunk))
                     if not header_sent:
                         header = create_wav_header(data_size=0)
                         yield header
@@ -416,10 +402,11 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
                 await fill_task
                 await worker_task
             except Exception as e:
-                _LOGGER.error("Generator Error: %s", e)
+                _LOGGER.error("Stream generator exception: %s", e)
                 text_queue.put(None)
             finally:
                 if fill_task: fill_task.cancel()
                 await self.hass.async_add_executor_job(callback.wait_for_finished)
+                _LOGGER.debug("Stream generator finished")
 
         return TTSAudioResponse("wav", get_async_generator())
