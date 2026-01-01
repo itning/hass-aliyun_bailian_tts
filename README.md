@@ -70,6 +70,7 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
    - CosyVoice模型：`cosyvoice-v1`等
    - Qwen-TTS模型：`qwen-tts`、`qwen-tts-latest`、`qwen-tts-2025-05-22`、`qwen-tts-2025-04-10`
    - Qwen3-TTS模型：`qwen3-tts-flash`、`qwen3-tts-flash-2025-09-18`
+   - 实时语音模型：`qwen-tts-realtime`...
    
    输入完成后，点击提交。
 

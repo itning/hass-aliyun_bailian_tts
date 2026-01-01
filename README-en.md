@@ -67,6 +67,7 @@ Currently supports the following two speech synthesis models:
    - CosyVoice models: `cosyvoice-v1`, etc.
    - Qwen-TTS models: `qwen-tts`, `qwen-tts-latest`, `qwen-tts-2025-05-22`, `qwen-tts-2025-04-10`
    - Qwen3-TTS models: `qwen3-tts-flash`, `qwen3-tts-flash-2025-09-18`
+   - Real-time speech model：`qwen-tts-realtime`...
    
    After entering the information, click **Submit**.
 
