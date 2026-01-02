@@ -10,5 +10,5 @@
   "single_config_entry": true,
   "loggers": ["aliyun_bailian_tts"],
   "config_flow": true,
-  "version": "1.1.5"
+  "version": "1.1.6"
 }
