@@ -10,8 +10,11 @@ from types import MappingProxyType
 from typing import Any, AsyncGenerator
 
 import dashscope
+from dashscope.api_entities.dashscope_response import SpeechSynthesisResponse
 from dashscope.audio.qwen_tts_realtime import QwenTtsRealtime, QwenTtsRealtimeCallback, AudioFormat
-from dashscope.audio.tts_v2 import ResultCallback
+from dashscope.audio.tts import ResultCallback as v1CallBack
+from dashscope.audio.tts import SpeechSynthesisResult
+from dashscope.audio.tts_v2 import ResultCallback as v2CallBack
 from homeassistant.components.tts import (
     TextToSpeechEntity,
     TtsAudioType,
@@ -36,7 +39,7 @@ async def async_setup_entry(
     async_add_entities([AliyunBaiLianTTSEntity(hass, config_entry)])
 
 
-class CosyVoiceStreamingCallback(ResultCallback):
+class CosyVoiceStreamingCallback(v2CallBack):
     def __init__(self, loop: asyncio.AbstractEventLoop):
         self.loop = loop
         self.audio_queue = asyncio.Queue()
@@ -66,6 +69,42 @@ class CosyVoiceStreamingCallback(ResultCallback):
     def on_data(self, data: bytes) -> None:
         _LOGGER.debug("Streaming on data %d", len(data))
         self.loop.call_soon_threadsafe(self.audio_queue.put_nowait, data)
+
+    async def get_audio_chunk(self) -> bytes | None:
+        return await self.audio_queue.get()
+
+    def wait_for_finished(self):
+        if not self.complete_event.wait(timeout=10):
+            _LOGGER.warning("Wait for session finish timed out")
+
+
+class SambertStreamingCallback(v1CallBack):
+    def __init__(self, loop: asyncio.AbstractEventLoop):
+        self.loop = loop
+        self.audio_queue = asyncio.Queue()
+        self.complete_event = threading.Event()
+        self.error = None
+
+    def on_open(self) -> None:
+        _LOGGER.debug("Streaming connection opened")
+
+    def on_complete(self) -> None:
+        _LOGGER.debug("Streaming complete")
+        self.complete_event.set()
+
+    def on_error(self, response: SpeechSynthesisResponse) -> None:
+        _LOGGER.error("Streaming error %s", response)
+        self.error = HomeAssistantError(response)
+        self.complete_event.set()
+
+    def on_close(self) -> None:
+        _LOGGER.debug("Streaming close")
+        self.loop.call_soon_threadsafe(self.audio_queue.put_nowait, None)
+        self.complete_event.set()
+
+    def on_event(self, result: SpeechSynthesisResult) -> None:
+        _LOGGER.debug("Streaming event")
+        self.loop.call_soon_threadsafe(self.audio_queue.put_nowait, result.get_audio_frame())
 
     async def get_audio_chunk(self) -> bytes | None:
         return await self.audio_queue.get()
@@ -337,6 +376,33 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
 
         return audio_data
 
+    @staticmethod
+    def _process_sambert_tts(
+            model: str, voice: str, message: str, api_key: str
+    ) -> bytes:
+        """Process sambert TTS synthesis."""
+        start_time = time.perf_counter()
+        dashscope.api_key = api_key
+        synthesizer = dashscope.audio.tts.SpeechSynthesizer()
+        result: SpeechSynthesisResult = synthesizer.call(model=model, text=message, format="mp3")
+        if result is None:
+            raise HomeAssistantError("call not return result")
+        audio_data = result.get_audio_data()
+
+        end_time = time.perf_counter()
+        elapsed_time = (end_time - start_time) * 1000
+
+        _LOGGER.debug("response: %s", result.get_response())
+
+        _LOGGER.info(
+            "[Metric] requestId: %s, first package delay: %s ms, elapsed: %.2f ms",
+            synthesizer.get_last_request_id(),
+            synthesizer.get_first_package_delay(),
+            elapsed_time,
+        )
+
+        return audio_data
+
     async def async_get_tts_audio(
             self,
             message: str,
@@ -374,6 +440,11 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
             elif model.startswith("cosyvoice"):
                 audio_data = await self.hass.async_add_executor_job(
                     self._process_cosyvoice_tts, model, voice, message, api_key
+                )
+                audio_format = "mp3"
+            elif model.startswith("sambert"):
+                audio_data = await self.hass.async_add_executor_job(
+                    self._process_sambert_tts, model, voice, message, api_key
                 )
                 audio_format = "mp3"
             else:
@@ -431,6 +502,31 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
                     _LOGGER.debug("Stream generator finished")
 
             return TTSAudioResponse("mp3", gen())
+        elif model.startswith("sambert"):
+            full_text = "".join([c async for c in request.message_gen])
+            sambert_streaming_callback = SambertStreamingCallback(asyncio.get_running_loop())
+            dashscope.api_key = api_key
+            worker_task = self.hass.async_add_executor_job(dashscope.audio.tts.SpeechSynthesizer().call, model,
+                                                           full_text, sambert_streaming_callback)
+
+            async def gen():
+                try:
+                    while True:
+                        chunk = await sambert_streaming_callback.get_audio_chunk()
+                        if chunk is None:
+                            _LOGGER.debug("finished callback")
+                            break
+                        if sambert_streaming_callback.error:
+                            raise sambert_streaming_callback.error
+                        yield chunk
+                    await worker_task
+                except Exception as e:
+                    _LOGGER.error("Stream generator exception: %s", e)
+                finally:
+                    await self.hass.async_add_executor_job(sambert_streaming_callback.wait_for_finished)
+                    _LOGGER.debug("Stream generator finished")
+
+            return TTSAudioResponse("wav", gen())
         elif model.startswith("qwen"):
             text_queue = queue.Queue()
             callback = QwenStreamingCallback(asyncio.get_running_loop())
