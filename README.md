@@ -26,10 +26,11 @@
 ## 简介
 Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.aliyun.com/)的语音合成大模型
 
-目前支持以下三种语音合成模型：
+目前支持以下四种语音合成模型：
 1. `CosyVoice` - 语音合成CosyVoice大模型，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/text-to-speech)
-2. `Qwen3-TTS` - 通义千问系列的语音合成模型，支持输入中文、英文、中英混合的文本，并流式输出音频，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/qwen-tts)
-3. `qwen-tts-realtime` - 通义千问实时语音合成模型，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/qwen-tts-realtime)
+2. `Sambert` - Sambert语音合成，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/sambert-python-sdk#8d44ae4006hrb)
+3. `Qwen3-TTS` - 通义千问系列的语音合成模型，支持输入中文、英文、中英混合的文本，并流式输出音频，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/qwen-tts)
+4. `qwen-tts-realtime` - 通义千问实时语音合成模型，具体可以查看[阿里云文档](https://help.aliyun.com/zh/model-studio/qwen-tts-realtime)
 
 ## 安装
 
@@ -65,11 +66,13 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
 
    音色（Voice）列表：
    - CosyVoice: https://help.aliyun.com/zh/model-studio/text-to-speech
+   - Sambert: https://help.aliyun.com/zh/model-studio/sambert-python-sdk#8d44ae4006hrb
    - Qwen3-TTS: https://help.aliyun.com/zh/model-studio/qwen-tts
    - qwen-tts-realtime: https://help.aliyun.com/zh/model-studio/qwen-tts-realtime
    
    模型（Model）列表：
    - CosyVoice模型：`cosyvoice-v1`等
+   - Sambert模型：`sambert-zhichu-v1`、`sambert-zhitian-v1`等
    - Qwen-TTS模型：`qwen-tts`、`qwen-tts-latest`、`qwen-tts-2025-05-22`、`qwen-tts-2025-04-10`
    - Qwen3-TTS模型：`qwen3-tts-flash`、`qwen3-tts-flash-2025-09-18`
    - 实时语音模型：`qwen-tts-realtime`

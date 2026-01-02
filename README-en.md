@@ -24,10 +24,11 @@
 ## Introduction
 The Home Assistant TTS (Text-to-Speech) feature leverages the voice synthesis capabilities of large language models from the [Aliyun BaiLian Platform](https://bailian.console.aliyun.com/).
 
-Currently supports the following three speech synthesis models:
+Currently supports the following four speech synthesis models:
 1. `CosyVoice` - CosyVoice large model for speech synthesis. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/text-to-speech)
-2. `Qwen3-TTS` - Speech synthesis model of the Qwen series, which supports inputting Chinese, English, and mixed Chinese-English text, and streamingly outputs audio. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/qwen-tts)
-3. `qwen-tts-realtime` - Qwen real-time speech synthesis model. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/qwen-tts-realtime)
+2. `Sambert` - Sambert speech synthesis. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/sambert-python-sdk#8d44ae4006hrb)
+3. `Qwen3-TTS` - Speech synthesis model of the Qwen series, which supports inputting Chinese, English, and mixed Chinese-English text, and streamingly outputs audio. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/qwen-tts)
+4. `qwen-tts-realtime` - Qwen real-time speech synthesis model. For more information, please refer to the [Aliyun Documentation](https://help.aliyun.com/zh/model-studio/qwen-tts-realtime)
 
 ## Installation
 
@@ -62,11 +63,13 @@ Currently supports the following three speech synthesis models:
 
    Voice list:
    - CosyVoice: https://help.aliyun.com/zh/model-studio/text-to-speech
+   - Sambert: https://help.aliyun.com/zh/model-studio/sambert-python-sdk#8d44ae4006hrb
    - Qwen3-TTS: https://help.aliyun.com/zh/model-studio/qwen-tts
    - qwen-tts-realtime: https://help.aliyun.com/zh/model-studio/qwen-tts-realtime
    
    Model list:
    - CosyVoice models: `cosyvoice-v1`, etc.
+   - Sambert models: `sambert-zhichu-v1`, `sambert-zhitian-v1`, etc.
    - Qwen-TTS models: `qwen-tts`, `qwen-tts-latest`, `qwen-tts-2025-05-22`, `qwen-tts-2025-04-10`
    - Qwen3-TTS models: `qwen3-tts-flash`, `qwen3-tts-flash-2025-09-18`
    - Real-time speech model: `qwen-tts-realtime`
