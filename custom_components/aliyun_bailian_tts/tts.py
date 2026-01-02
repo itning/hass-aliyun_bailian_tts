@@ -11,6 +11,7 @@ from typing import Any, AsyncGenerator
 
 import dashscope
 from dashscope.audio.qwen_tts_realtime import QwenTtsRealtime, QwenTtsRealtimeCallback, AudioFormat
+from dashscope.audio.tts_v2 import ResultCallback
 from homeassistant.components.tts import (
     TextToSpeechEntity,
     TtsAudioType,
@@ -35,7 +36,46 @@ async def async_setup_entry(
     async_add_entities([AliyunBaiLianTTSEntity(hass, config_entry)])
 
 
-class StreamingCallback(QwenTtsRealtimeCallback):
+class CosyVoiceStreamingCallback(ResultCallback):
+    def __init__(self, loop: asyncio.AbstractEventLoop):
+        self.loop = loop
+        self.audio_queue = asyncio.Queue()
+        self.complete_event = threading.Event()
+        self.error = None
+
+    def on_open(self) -> None:
+        _LOGGER.debug("Streaming connection opened")
+
+    def on_complete(self) -> None:
+        _LOGGER.debug("Streaming complete")
+        self.complete_event.set()
+
+    def on_error(self, message) -> None:
+        _LOGGER.error("Streaming error %s", message)
+        self.error = HomeAssistantError(message)
+        self.complete_event.set()
+
+    def on_close(self) -> None:
+        _LOGGER.debug("Streaming close")
+        self.loop.call_soon_threadsafe(self.audio_queue.put_nowait, None)
+        self.complete_event.set()
+
+    def on_event(self, message: str) -> None:
+        _LOGGER.debug("Streaming event %s", message)
+
+    def on_data(self, data: bytes) -> None:
+        _LOGGER.debug("Streaming on data %d", len(data))
+        self.loop.call_soon_threadsafe(self.audio_queue.put_nowait, data)
+
+    async def get_audio_chunk(self) -> bytes | None:
+        return await self.audio_queue.get()
+
+    def wait_for_finished(self):
+        if not self.complete_event.wait(timeout=10):
+            _LOGGER.warning("Wait for session finish timed out")
+
+
+class QwenStreamingCallback(QwenTtsRealtimeCallback):
     """Callback handler for streaming TTS (Thread-Safe)."""
 
     def __init__(self, loop: asyncio.AbstractEventLoop):
@@ -159,7 +199,7 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
     def _sync_tts_worker(model: str,
                          voice: str,
                          api_key: str,
-                         callback: StreamingCallback,
+                         callback: QwenStreamingCallback,
                          text_queue: queue.Queue):
         """Runs in executor thread."""
         if 'realtime' not in model:
@@ -361,60 +401,82 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
         model = config.get(CONF_MODEL, "qwen3-tts-flash")
         voice = request.options.get(ATTR_VOICE, config.get(CONF_VOICE, "Cherry"))
 
-        if not model.startswith("qwen") and 'realtime' not in model:
-            # cosyvoice not support
-            _LOGGER.warning("Model not supported realtime stream, so sync get: %s", model)
+        if model.startswith("cosyvoice"):
             full_text = "".join([c async for c in request.message_gen])
-            fmt, data = await self.async_get_tts_audio(full_text, request.language, request.options)
+            dashscope.api_key = api_key
+            cosy_voice_streaming_callback = CosyVoiceStreamingCallback(asyncio.get_running_loop())
+
+            def cosy_voice_sync():
+                synthesizer = dashscope.audio.tts_v2.SpeechSynthesizer(model=model, voice=voice,
+                                                                       callback=cosy_voice_streaming_callback)
+                synthesizer.call(full_text)
+
+            worker_task = self.hass.async_add_executor_job(cosy_voice_sync)
 
             async def gen():
-                yield data
+                try:
+                    while True:
+                        chunk = await cosy_voice_streaming_callback.get_audio_chunk()
+                        if chunk is None:
+                            _LOGGER.debug("finished callback")
+                            break
+                        if cosy_voice_streaming_callback.error:
+                            raise cosy_voice_streaming_callback.error
+                        yield chunk
+                    await worker_task
+                except Exception as e:
+                    _LOGGER.error("Stream generator exception: %s", e)
+                finally:
+                    await self.hass.async_add_executor_job(cosy_voice_streaming_callback.wait_for_finished)
+                    _LOGGER.debug("Stream generator finished")
 
-            return TTSAudioResponse(fmt, gen())
+            return TTSAudioResponse("mp3", gen())
+        elif model.startswith("qwen"):
+            text_queue = queue.Queue()
+            callback = QwenStreamingCallback(asyncio.get_running_loop())
 
-        text_queue = queue.Queue()
-        callback = StreamingCallback(asyncio.get_running_loop())
+            worker_task = self.hass.async_add_executor_job(
+                self._sync_tts_worker, model, voice, api_key, callback, text_queue
+            )
 
-        worker_task = self.hass.async_add_executor_job(
-            self._sync_tts_worker, model, voice, api_key, callback, text_queue
-        )
+            async def get_async_generator() -> AsyncGenerator[bytes, None]:
+                fill_task = None
+                header_sent = False
+                try:
+                    async def fill_queue():
+                        try:
+                            async for msg in request.message_gen:
+                                _LOGGER.debug("request: %s", msg)
+                                text_queue.put(msg)
+                        finally:
+                            _LOGGER.debug("finished message_gen")
+                            text_queue.put(None)
 
-        async def get_async_generator() -> AsyncGenerator[bytes, None]:
-            fill_task = None
-            header_sent = False
-            try:
-                async def fill_queue():
-                    try:
-                        async for msg in request.message_gen:
-                            _LOGGER.debug("request: %s", msg)
-                            text_queue.put(msg)
-                    finally:
-                        _LOGGER.debug("finished message_gen")
-                        text_queue.put(None)
+                    fill_task = asyncio.create_task(fill_queue())
 
-                fill_task = asyncio.create_task(fill_queue())
+                    while True:
+                        chunk = await callback.get_audio_chunk()
+                        if chunk is None:
+                            _LOGGER.debug("finished callback")
+                            break
+                        if callback.error:
+                            raise callback.error
+                        if not header_sent:
+                            header = AliyunBaiLianTTSEntity._create_wav_header(data_size=0)
+                            yield header
+                            header_sent = True
+                        yield chunk
 
-                while True:
-                    chunk = await callback.get_audio_chunk()
-                    if chunk is None:
-                        _LOGGER.debug("finished callback")
-                        break
-                    if callback.error:
-                        raise callback.error
-                    if not header_sent:
-                        header = AliyunBaiLianTTSEntity._create_wav_header(data_size=0)
-                        yield header
-                        header_sent = True
-                    yield chunk
+                    await fill_task
+                    await worker_task
+                except Exception as e:
+                    _LOGGER.error("Stream generator exception: %s", e)
+                    text_queue.put(None)
+                finally:
+                    if fill_task: fill_task.cancel()
+                    await self.hass.async_add_executor_job(callback.wait_for_finished)
+                    _LOGGER.debug("Stream generator finished")
 
-                await fill_task
-                await worker_task
-            except Exception as e:
-                _LOGGER.error("Stream generator exception: %s", e)
-                text_queue.put(None)
-            finally:
-                if fill_task: fill_task.cancel()
-                await self.hass.async_add_executor_job(callback.wait_for_finished)
-                _LOGGER.debug("Stream generator finished")
-
-        return TTSAudioResponse("wav", get_async_generator())
+            return TTSAudioResponse("wav", get_async_generator())
+        else:
+            raise HomeAssistantError(f"Unsupported model: {model}")
