@@ -1,0 +1,46 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Aliyun BaiLian TTS",
+        "description": "Please enter the configuration for Aliyun BaiLian TTS",
+        "data": {
+          "name": "Configuration Name",
+          "token": "API Token",
+          "model": "Model",
+          "voice": "Voice"
+        },
+        "data_description": {
+          "name": "Give this TTS configuration a unique name, e.g., Aliyun TTS-Chinese, Aliyun TTS-English"
+        }
+      }
+    },
+    "error": {
+      "invalid_token": "Token cannot be empty",
+      "invalid_name": "Name cannot be empty",
+      "name_exists": "This name is already in use, please use a different name"
+    },
+    "abort": {
+      "already_configured": "This configuration already exists"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Update Configuration",
+        "description": "Modify Aliyun BaiLian TTS configuration",
+        "data": {
+          "name": "Configuration Name",
+          "token": "API Token",
+          "model": "Model",
+          "voice": "Voice"
+        }
+      }
+    },
+    "error": {
+      "invalid_token": "Token cannot be empty",
+      "invalid_name": "Name cannot be empty",
+      "name_exists": "This name is already in use, please use a different name"
+    }
+  }
+}

@@ -9,6 +9,5 @@
   "issue_tracker": "https://github.com/hasscc/hass-aliyun_bailian_tts/issues",
   "loggers": ["aliyun_bailian_tts"],
   "requirements": ["dashscope>=1.25.5"],
-  "single_config_entry": true,
-  "version": "1.1.7"
+  "version": "1.2.0"
 }

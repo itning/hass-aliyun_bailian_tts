@@ -25,7 +25,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_TOKEN, CONF_MODEL, CONF_VOICE, DOMAIN
+from .const import CONF_TOKEN, CONF_MODEL, CONF_VOICE, DOMAIN, CONF_NAME
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -169,7 +169,12 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
         """Initialize TTS entity."""
         self.hass = hass
         self._config_entry = config_entry
-        self._attr_name = "Aliyun BaiLian TTS"
+
+        # 获取配置的名称
+        config = self._get_current_config()
+        entity_name = config.get(CONF_NAME, config_entry.title)
+
+        self._attr_name = entity_name
         self._attr_unique_id = f"{DOMAIN}_{config_entry.entry_id}"
 
     @property

@@ -1,0 +1,46 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "配置阿里云百炼 TTS",
+        "description": "请输入阿里云百炼 TTS 的配置信息",
+        "data": {
+          "name": "配置名称",
+          "token": "API Token",
+          "model": "模型",
+          "voice": "音色"
+        },
+        "data_description": {
+          "name": "给这个 TTS 配置起一个唯一的名称，例如：阿里云TTS-中文、阿里云TTS-英文"
+        }
+      }
+    },
+    "error": {
+      "invalid_token": "Token 不能为空",
+      "invalid_name": "名称不能为空",
+      "name_exists": "该名称已被使用，请使用其他名称"
+    },
+    "abort": {
+      "already_configured": "该配置已存在"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "更新配置",
+        "description": "修改阿里云百炼 TTS 配置",
+        "data": {
+          "name": "配置名称",
+          "token": "API Token",
+          "model": "模型",
+          "voice": "音色"
+        }
+      }
+    },
+    "error": {
+      "invalid_token": "Token 不能为空",
+      "invalid_name": "名称不能为空",
+      "name_exists": "该名称已被使用，请使用其他名称"
+    }
+  }
+}
