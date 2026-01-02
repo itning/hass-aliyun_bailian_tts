@@ -1,17 +1,29 @@
-name: Validate
-
+name: "Validation And Formatting"
 on:
   push:
   pull_request:
   workflow_dispatch:
-
-permissions: {}
-
+  schedule:
+    - cron: '0 0 * * *'
 jobs:
-  validate-hacs:
+  hacs:
     runs-on: "ubuntu-latest"
+    name: HACS
     steps:
+      - name: Check out the repository
+        uses: "actions/checkout@v3"
+
       - name: HACS validation
         uses: "hacs/action@main"
         with:
           category: "integration"
+
+  hassfest:
+    runs-on: "ubuntu-latest"
+    name: Hassfest
+    steps:
+      - name: Check out the repository
+        uses: "actions/checkout@v3"
+
+      - name: Hassfest validation
+        uses: "home-assistant/actions/hassfest@master"
