@@ -6,6 +6,7 @@ import queue
 import struct
 import threading
 import time
+from types import MappingProxyType
 from typing import Any, AsyncGenerator
 
 import dashscope
@@ -82,115 +83,6 @@ class StreamingCallback(QwenTtsRealtimeCallback):
             _LOGGER.warning("Wait for session finish timed out")
 
 
-def create_wav_header(
-        data_size: int,
-        channels: int = 1,
-        sample_rate: int = 24000,
-        bits_per_sample: int = 16,
-) -> bytes:
-    """Create WAV file header."""
-    riff = b"RIFF"
-    filesize = 36 + data_size
-    wave_fmt = b"WAVE"
-    fmt = b"fmt "
-    subchunk1_size = 16
-    audio_format = 1  # PCM
-    byte_rate = sample_rate * channels * bits_per_sample // 8
-    block_align = channels * bits_per_sample // 8
-    subchunk2_id = b"data"
-
-    header = riff + struct.pack("<I", filesize) + wave_fmt + fmt
-    header += struct.pack(
-        "<IHHIIHH",
-        subchunk1_size,
-        audio_format,
-        channels,
-        sample_rate,
-        byte_rate,
-        block_align,
-        bits_per_sample,
-    )
-    header += subchunk2_id + struct.pack("<I", data_size)
-
-    return header
-
-
-def _sync_tts_worker(model: str,
-                     voice: str,
-                     api_key: str,
-                     callback: StreamingCallback,
-                     text_queue: queue.Queue):
-    """Runs in executor thread."""
-    if 'realtime' not in model:
-        message = ''
-        while True:
-            text_chunk = text_queue.get()
-            if text_chunk is None: break
-            message += text_chunk
-
-        responses = dashscope.MultiModalConversation.call(
-            api_key=api_key,
-            model=model,
-            text=message,
-            voice=voice,
-            stream=True,
-        )
-
-        if responses is None:
-            _LOGGER.error(
-                "Qwen TTS returned None for message: %s model: %s voice: %s",
-                message,
-                model,
-                voice,
-            )
-            raise HomeAssistantError("TTS synthesis returned None")
-
-        for chunk in responses:
-            if chunk.status_code != 200:
-                _LOGGER.error(
-                    "Qwen TTS error. status_code: %s request_id: %s code: %s message: %s",
-                    chunk.status_code,
-                    chunk.request_id,
-                    chunk.code,
-                    chunk.message,
-                )
-                raise HomeAssistantError(f"TTS synthesis error: {chunk.message}")
-
-            if chunk.output and chunk.output.audio and chunk.output.audio.data:
-                audio_string = chunk.output.audio.data
-                wav_bytes: bytes = base64.b64decode(audio_string)
-                callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, wav_bytes)
-        callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, None)
-        callback.complete_event.set()
-
-    else:
-        dashscope.api_key = api_key
-        qwen_tts = QwenTtsRealtime(
-            model=model,
-            callback=callback,
-            url="wss://dashscope.aliyuncs.com/api-ws/v1/realtime",
-        )
-        try:
-            qwen_tts.connect()
-            qwen_tts.update_session(
-                voice=voice,
-                response_format=AudioFormat.PCM_24000HZ_MONO_16BIT,
-                mode="server_commit",
-            )
-            while True:
-                text_chunk = text_queue.get()
-                if text_chunk is None: break
-                _LOGGER.debug("append_text %s", text_chunk)
-                qwen_tts.append_text(text_chunk)
-            qwen_tts.finish()
-        except Exception as e:
-            _LOGGER.error("Worker Error: %s", e)
-            callback.error = e
-            callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, None)
-        finally:
-            callback.complete_event.set()
-
-
 class AliyunBaiLianTTSEntity(TextToSpeechEntity):
     """Aliyun BaiLian TTS entity."""
 
@@ -224,11 +116,120 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
             ATTR_VOICE: config.get(CONF_VOICE, "Cherry"),
         }
 
-    def _get_current_config(self) -> dict[str, Any]:
+    def _get_current_config(self) -> MappingProxyType[str, Any]:
         """Get current configuration, preferring options over data."""
         if self._config_entry.options:
             return self._config_entry.options
         return self._config_entry.data
+
+    @staticmethod
+    def _create_wav_header(
+            data_size: int,
+            channels: int = 1,
+            sample_rate: int = 24000,
+            bits_per_sample: int = 16,
+    ) -> bytes:
+        """Create WAV file header."""
+        riff = b"RIFF"
+        filesize = 36 + data_size
+        wave_fmt = b"WAVE"
+        fmt = b"fmt "
+        subchunk1_size = 16
+        audio_format = 1  # PCM
+        byte_rate = sample_rate * channels * bits_per_sample // 8
+        block_align = channels * bits_per_sample // 8
+        subchunk2_id = b"data"
+
+        header = riff + struct.pack("<I", filesize) + wave_fmt + fmt
+        header += struct.pack(
+            "<IHHIIHH",
+            subchunk1_size,
+            audio_format,
+            channels,
+            sample_rate,
+            byte_rate,
+            block_align,
+            bits_per_sample,
+        )
+        header += subchunk2_id + struct.pack("<I", data_size)
+
+        return header
+
+    @staticmethod
+    def _sync_tts_worker(model: str,
+                         voice: str,
+                         api_key: str,
+                         callback: StreamingCallback,
+                         text_queue: queue.Queue):
+        """Runs in executor thread."""
+        if 'realtime' not in model:
+            message = ''
+            while True:
+                text_chunk = text_queue.get()
+                if text_chunk is None: break
+                message += text_chunk
+
+            responses = dashscope.MultiModalConversation.call(
+                api_key=api_key,
+                model=model,
+                text=message,
+                voice=voice,
+                stream=True,
+            )
+
+            if responses is None:
+                _LOGGER.error(
+                    "Qwen TTS returned None for message: %s model: %s voice: %s",
+                    message,
+                    model,
+                    voice,
+                )
+                raise HomeAssistantError("TTS synthesis returned None")
+
+            for chunk in responses:
+                if chunk.status_code != 200:
+                    _LOGGER.error(
+                        "Qwen TTS error. status_code: %s request_id: %s code: %s message: %s",
+                        chunk.status_code,
+                        chunk.request_id,
+                        chunk.code,
+                        chunk.message,
+                    )
+                    raise HomeAssistantError(f"TTS synthesis error: {chunk.message}")
+
+                if chunk.output and chunk.output.audio and chunk.output.audio.data:
+                    audio_string = chunk.output.audio.data
+                    wav_bytes: bytes = base64.b64decode(audio_string)
+                    callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, wav_bytes)
+            callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, None)
+            callback.complete_event.set()
+
+        else:
+            dashscope.api_key = api_key
+            qwen_tts = QwenTtsRealtime(
+                model=model,
+                callback=callback,
+                url="wss://dashscope.aliyuncs.com/api-ws/v1/realtime",
+            )
+            try:
+                qwen_tts.connect()
+                qwen_tts.update_session(
+                    voice=voice,
+                    response_format=AudioFormat.PCM_24000HZ_MONO_16BIT,
+                    mode="server_commit",
+                )
+                while True:
+                    text_chunk = text_queue.get()
+                    if text_chunk is None: break
+                    _LOGGER.debug("append_text %s", text_chunk)
+                    qwen_tts.append_text(text_chunk)
+                qwen_tts.finish()
+            except Exception as e:
+                _LOGGER.error("Worker Error: %s", e)
+                callback.error = e
+                callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, None)
+            finally:
+                callback.complete_event.set()
 
     @staticmethod
     def _process_qwen_tts(model: str, voice: str, message: str, api_key: str) -> bytes:
@@ -268,7 +269,7 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
                 wav_bytes: bytes = base64.b64decode(audio_string)
                 audio += wav_bytes
 
-        wav_header = create_wav_header(len(audio))
+        wav_header = AliyunBaiLianTTSEntity._create_wav_header(len(audio))
         return wav_header + audio
 
     @staticmethod
@@ -375,7 +376,7 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
         callback = StreamingCallback(asyncio.get_running_loop())
 
         worker_task = self.hass.async_add_executor_job(
-            _sync_tts_worker, model, voice, api_key, callback, text_queue
+            self._sync_tts_worker, model, voice, api_key, callback, text_queue
         )
 
         async def get_async_generator() -> AsyncGenerator[bytes, None]:
@@ -401,7 +402,7 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
                     if callback.error:
                         raise callback.error
                     if not header_sent:
-                        header = create_wav_header(data_size=0)
+                        header = AliyunBaiLianTTSEntity._create_wav_header(data_size=0)
                         yield header
                         header_sent = True
                     yield chunk
