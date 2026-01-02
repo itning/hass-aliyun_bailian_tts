@@ -2,13 +2,13 @@
   "domain": "aliyun_bailian_tts",
   "name": "Aliyun BaiLian TTS",
   "codeowners": ["@itning"],
+  "config_flow": true,
   "documentation": "https://github.com/itning/hass-aliyun_bailian_tts",
+  "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/hasscc/hass-aliyun_bailian_tts/issues",
-  "requirements": ["dashscope>=1.25.5"],
-  "integration_type": "service",
-  "single_config_entry": true,
   "loggers": ["aliyun_bailian_tts"],
-  "config_flow": true,
+  "requirements": ["dashscope>=1.25.5"],
+  "single_config_entry": true,
   "version": "1.1.7"
 }
