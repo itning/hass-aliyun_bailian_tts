@@ -1,6 +1,7 @@
 """Aliyun BaiLian TTS platform using TextToSpeechEntity."""
 import asyncio
 import base64
+import functools
 import logging
 import queue
 import struct
@@ -511,8 +512,14 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
             full_text = "".join([c async for c in request.message_gen])
             sambert_streaming_callback = SambertStreamingCallback(asyncio.get_running_loop())
             dashscope.api_key = api_key
-            worker_task = self.hass.async_add_executor_job(dashscope.audio.tts.SpeechSynthesizer().call, model,
-                                                           full_text, sambert_streaming_callback)
+
+            worker_task = self.hass.async_add_executor_job(functools.partial(
+                dashscope.audio.tts.SpeechSynthesizer.call,
+                model,
+                full_text,
+                sambert_streaming_callback,
+                format='mp3'
+            ))
 
             async def gen():
                 try:
@@ -531,7 +538,7 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
                     await self.hass.async_add_executor_job(sambert_streaming_callback.wait_for_finished)
                     _LOGGER.debug("Stream generator finished")
 
-            return TTSAudioResponse("wav", gen())
+            return TTSAudioResponse("mp3", gen())
         elif model.startswith("qwen"):
             text_queue = queue.Queue()
             callback = QwenStreamingCallback(asyncio.get_running_loop())
