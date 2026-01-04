@@ -75,7 +75,7 @@ class CosyVoiceStreamingCallback(v2CallBack):
         return await self.audio_queue.get()
 
     def wait_for_finished(self):
-        if not self.complete_event.wait(timeout=10):
+        if not self.complete_event.wait(timeout=120):
             _LOGGER.warning("CosyVoice Wait for session finish timed out")
 
 
@@ -111,7 +111,7 @@ class SambertStreamingCallback(v1CallBack):
         return await self.audio_queue.get()
 
     def wait_for_finished(self):
-        if not self.complete_event.wait(timeout=10):
+        if not self.complete_event.wait(timeout=120):
             _LOGGER.warning("Sambert Wait for session finish timed out")
 
 
@@ -161,7 +161,7 @@ class QwenStreamingCallback(QwenTtsRealtimeCallback):
         return await self.audio_queue.get()
 
     def wait_for_finished(self):
-        if not self.complete_event.wait(timeout=10):
+        if not self.complete_event.wait(timeout=120):
             _LOGGER.warning("Qwen Wait for session finish timed out")
 
 
@@ -331,7 +331,8 @@ class AliyunBaiLianTTSEntity(TextToSpeechEntity):
                 callback.error = e
                 callback.loop.call_soon_threadsafe(callback.audio_queue.put_nowait, None)
             finally:
-                callback.complete_event.set()
+                callback.wait_for_finished()
+                qwen_tts.close()
         _LOGGER.debug("_sync_tts_worker finished")
 
     @staticmethod
