@@ -1,4 +1,5 @@
 {
     "name": "Aliyun BaiLian TTS",
-    "render_readme": true
+    "render_readme": true,
+    "country": ["CN"]
 }
