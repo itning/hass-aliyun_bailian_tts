@@ -34,32 +34,15 @@ Currently supports the following four speech synthesis models:
 
 ### Installation via HACS
 
-1. [![Open your Home Assistant instance and open the hass-aliyun_bailian_tts integration inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=itning&repository=hass-aliyun_bailian_tts&category=integration) Go to the HACS panel, click the menu button in the top-right corner, and add a custom integration.
+1. [![Open your Home Assistant instance and open the hass-aliyun_bailian_tts integration inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=itning&repository=hass-aliyun_bailian_tts&category=integration)
 
-   ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/1.png)
-
-2. In the pop-up panel:
-
-   - **Repository**: Enter `https://github.com/itning/hass-aliyun_bailian_tts.git`
-   - **Type**: Select `Integration`
-
-   ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/2.png)
-
-3. Click the **ADD** button to save.
-
-4. In HACS, search for the newly added integration: `Aliyun BaiLian TTS`. Click the **Download** button on the right side of the menu.
-
-   ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/3.png)
-
-5. After the download is complete, restart Home Assistant as prompted.
-
-6. After restarting, go to **Settings** > **Devices & Services**, then click the button in the bottom-right corner to add an integration. Search for `Aliyun BaiLian TTS` and add it.
+2. After restarting, go to **Settings** > **Devices & Services**, then click the button in the bottom-right corner to add an integration. Search for `Aliyun BaiLian TTS` and add it.
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/4.png)
 
-7. Click on the added `Aliyun BaiLian TTS` to enter the configuration page.
+3. Click on the added `Aliyun BaiLian TTS` to enter the configuration page.
 
-8. Click the **Configure** button, and enter your BaiLian Platform Token (https://bailian.console.aliyun.com/?tab=model#/api-key).
+4. Click the **Configure** button, and enter your BaiLian Platform Token (https://bailian.console.aliyun.com/?tab=model#/api-key).
 
    Voice list:
    - CosyVoice: https://help.aliyun.com/zh/model-studio/text-to-speech
@@ -78,11 +61,11 @@ Currently supports the following four speech synthesis models:
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/5.png)
 
-9. Click **Settings** > **Voice Assistant** > **Modify Assistant**, and change the engine to `Aliyun BaiLian TTS`.
+5. Click **Settings** > **Voice Assistant** > **Modify Assistant**, and change the engine to `Aliyun BaiLian TTS`.
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/6.png)
 
-10. You're all set!
+6. You're all set!
 
 ## Conclusion
 

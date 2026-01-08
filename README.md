@@ -36,33 +36,15 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
 
 ### 通过HACS安装
 
-1. [![Open your Home Assistant instance and open the hass-aliyun_bailian_tts integration inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=itning&repository=hass-aliyun_bailian_tts&category=integration) 前往HACS面板，点击右上角菜单，添加自定义集成 
+1. [![Open your Home Assistant instance and open the hass-aliyun_bailian_tts integration inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=itning&repository=hass-aliyun_bailian_tts&category=integration)
 
-   ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/1.png)
-
-2. 在弹出的面板中，
-
-   Repository填写`https://github.com/itning/hass-aliyun_bailian_tts.git`
-
-   type选择：`Integration` 
-
-   ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/2.png)
-
-3. 点击ADD按钮进行保存。
-
-4. 在HACS中搜索刚刚添加的集成：`Aliyun BaiLian TTS` 并在右侧菜单中点击`Download`按钮
-
-   ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/3.png)
-
-5. 下载完成后按照提示重启Home Assistant
-
-6. 重启后在设置中点击设备与服务，然后点击右下角按钮添加集成，搜索`Aliyun BaiLian TTS` 并添加。
+2. 重启后在设置中点击设备与服务，然后点击右下角按钮添加集成，搜索`Aliyun BaiLian TTS` 并添加。
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/4.png)
 
-7. 点击添加的`Aliyun BaiLian TTS`进入配置页面
+3. 点击添加的`Aliyun BaiLian TTS`进入配置页面
 
-8. 点击配置按钮，输入百炼平台Token （https://bailian.console.aliyun.com/?tab=model#/api-key）
+4. 点击配置按钮，输入百炼平台Token （https://bailian.console.aliyun.com/?tab=model#/api-key）
 
    音色（Voice）列表：
    - CosyVoice: https://help.aliyun.com/zh/model-studio/text-to-speech
@@ -81,11 +63,11 @@ Home Assistant TTS发音使用阿里云[百炼平台](https://bailian.console.al
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/5.png)
 
-9. 点击设置，语音助手，修改助手，将引擎改成`Aliyun BaiLian TTS`
+5. 点击设置，语音助手，修改助手，将引擎改成`Aliyun BaiLian TTS`
 
    ![](https://raw.githubusercontent.com/itning/hass-aliyun_bailian_tts/refs/heads/main/pic/6.png)
 
-10. 完成。
+6. 完成。
 
 ## 结尾
 
